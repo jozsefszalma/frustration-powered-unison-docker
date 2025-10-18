@@ -16,6 +16,10 @@ This project packages Unison, OpenSSH, and a small helper entrypoint so that two
 - **Single image for mixed environments** – Run one container on each NAS, even if they use very different host operating systems.
 - **Optional persistent archives** – Keep Unison's archive database on a host path so reconnects stay smooth across container upgrades.
 
+## Security Considerations
+- The password-based security approach detailed below is not ideal; if you want to use this repo for anything important I recommend implementing key-based authentication.
+- At the very least set up the host firewall to only allow traffic to the Unison port from the Tailscale IP of the other machine.
+
 ## Repository Layout
 - `Dockerfile` – Builds the Arch Linux-based image with Unison, OpenSSH, sshpass, and tini.
 - `entrypoint.sh` – Configures either the Unison server or client role depending on environment variables.
