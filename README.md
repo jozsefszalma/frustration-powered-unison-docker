@@ -1,5 +1,5 @@
 # Frustration-powered Unison Container Kit
-To keep heterogeneous NAS systems in sync.
+![banner](banner/banner.jpg)
 
 ## Introduction
 This repo was born out of the need 
