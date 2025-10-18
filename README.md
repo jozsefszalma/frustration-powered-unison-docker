@@ -61,14 +61,17 @@ The container is configured entirely through environment variables; you do not n
 | `UNISON_PORT` | No | `50000` | TCP port used for SSH between the two containers. Must match on both sides. |
 | `SSH_PASSWORD` | Yes (server) | — | Password for the root account inside the container. Required on the server so the client can authenticate. |
 | `CP_SSH_PASSWORD` | Yes (client) | — | Password to use when connecting to the remote container. Must match the remote container's `SSH_PASSWORD`. |
+| `CP_USER_ID` | No | — | Username for the remote container when running as a client. Defaults to the local container user (root unless `USER_UID`/`USER_GID` are set). |
 | `REPEAT_MODE` | No | `watch` | Synchronisation schedule: `watch` (inotify-based), any integer number of seconds (e.g. `300`), or `manual` to run once. |
 | `REPEAT_INTERVAL` | No | `300` | Fallback interval in seconds when `REPEAT_MODE` is not numeric. Ignored for `watch` and `manual`. |
 | `PREFER_PATH` | No | — | Optional argument passed to `unison -prefer` (e.g. `newer`, `/sync`). Leave unset to accept Unison’s default conflict handling. |
 | `UNISON_EXTRA_ARGS` | No | — | Additional flags appended to the Unison command on both server and client. Quoted values (e.g. `-ignore "Name *.tmp"`) are now parsed correctly, but the string is evaluated by the entrypoint and should be treated as trusted input. |
-| `UNISON_ARCHIVE_PATH` | No | — | Absolute path to persist Unison’s archive database outside the container (e.g. `/config/unison`). When set, `/root/.unison` is symlinked to this directory. |
+| `USER_UID` | No | — | When set together with `USER_GID`, the entrypoint creates (or reuses) a user account with this UID and runs Unison under that identity. |
+| `USER_GID` | No | — | Group ID paired with `USER_UID`. The entrypoint reuses an existing group with this GID or creates one if necessary. |
+| `UNISON_ARCHIVE_PATH` | No | — | Absolute path used as the Unison user’s home directory (e.g. `/config/unison`). Works even when running as `root`, and when combined with `USER_UID`/`USER_GID` the managed account’s home is set here so archives live outside the container. |
 | `RECONNECT_DELAY` | No | `300` | Seconds to wait before retrying the Unison connection after an error. Applies to the client role and retries indefinitely. |
 
-Both containers run as the `root` user. SSH connections therefore always target the `root` account; only the password needs to be provided.
+By default the container runs Unison and SSH as `root`. Provide `USER_UID` and `USER_GID` to create a matching user inside the container so new files inherit the correct ownership. When a user is created, SSH logins and the Unison process run as that account instead of `root`, and the `SSH_PASSWORD`/`CP_SSH_PASSWORD` variables apply to that user. Override the remote login by setting `CP_USER_ID` on the client when the server should use a different account (e.g. keep the server on `root` while the client writes files as an Unraid user).
 
 ## Networking Guidance
 - Run the container in **host network** mode so inbound connections retain the remote Tailscale IP, which simplifies firewall rules.
@@ -170,7 +173,7 @@ By default Unison stores its archive files under `/root/.unison` inside the cont
 -e UNISON_ARCHIVE_PATH=/unison-archive
 ```
 
-The entrypoint will migrate existing archives on first start and symlink `/root/.unison` to the provided path.
+The provided path becomes the Unison user’s home directory and the entrypoint ensures a `.unison` directory exists inside it.
 
 ## Verifying the Synchronisation
 1. Confirm that the server log shows the OpenSSH server listening on `UNISON_PORT`.

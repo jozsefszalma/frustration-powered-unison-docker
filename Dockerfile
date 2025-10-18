@@ -8,6 +8,7 @@ RUN pacman -Syu --noconfirm \
       ca-certificates \
       openssh \
       sshpass \
+      shadow \
       unison \
       curl \
  && pacman -Scc --noconfirm
