@@ -76,6 +76,8 @@ The container is configured entirely through environment variables; you do not n
 | `UNISON_ARCHIVE_PATH` | No | — | Absolute path used as the Unison user’s home directory (e.g. `/config/unison`). Works even when running as `root`, and when combined with `USER_UID`/`USER_GID` the managed account’s home is set here so archives live outside the container. |
 | `RECONNECT_DELAY` | No | `300` | Seconds to wait before retrying the Unison connection after an error. Applies to the client role and retries indefinitely. |
 
+The above variables are populated in the dockerfile to ensure the host's docker user interface exposes them, but you need to populate the appropriate values and mount the folders before the first run.
+
 By default the container runs Unison and SSH as `root`. Provide `USER_UID` and `USER_GID` to create a matching user inside the container so new files inherit the correct ownership. When a user is created, SSH logins and the Unison process run as that account instead of `root`, and the `SSH_PASSWORD`/`CP_SSH_PASSWORD` variables apply to that user. Override the remote login by setting `CP_USER_ID` on the client when the server should use a different account (e.g. keep the server on `root` while the client writes files as an Unraid user).
 
 ## Networking Guidance

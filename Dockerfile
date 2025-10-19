@@ -47,8 +47,24 @@ RUN chmod +x /usr/local/bin/ssh-with-pass.sh
 
 WORKDIR /sync
 
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+ENV ROLE=client \
+    LOCAL_PATH=/sync \
+    REMOTE_PATH=/sync \
+    COUNTERPARTY_IP="" \
+    UNISON_PORT=50000 \
+    REPEAT_MODE="watch" \
+    UNISON_EXTRA_ARGS="-ignore 'Name @eaDir' -ignore 'Name .sync'" \
+    UNISON_ARCHIVE_PATH="" \
+    USER_UID="" \
+    USER_GID="" \
+    PREFER_PATH="newer" \
+    SSH_PASSWORD="" \
+    CP_SSH_PASSWORD="" \
+    CP_USER_ID="" \
+    RECONNECT_DELAY=300
 
+
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Use vendored tini (static) as PID1
