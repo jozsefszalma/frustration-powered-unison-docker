@@ -10,19 +10,36 @@ REPEAT_MODE=${REPEAT_MODE:-watch}
 REPEAT_INTERVAL=${REPEAT_INTERVAL:-300}
 UNISON_EXTRA_ARGS=${UNISON_EXTRA_ARGS:-}
 UNISON_ARCHIVE_PATH=${UNISON_ARCHIVE_PATH:-}
+cp_ssh_user_name_explicit=false
+if [[ -n ${CP_SSH_USER_NAME+x} ]]; then
+    cp_ssh_user_name_explicit=true
+fi
+
 USER_UID=${USER_UID:-}
 USER_GID=${USER_GID:-}
+SSH_USER_NAME=${SSH_USER_NAME:-}
+CP_SSH_USER_NAME=${CP_SSH_USER_NAME:-}
+CP_USER_ID=${CP_USER_ID:-}
 
 log() {
     echo "[$(date --iso-8601=seconds)] $*"
 }
+
+if [[ -n "$CP_USER_ID" && -z "$CP_SSH_USER_NAME" ]]; then
+    log "WARNING: CP_USER_ID is deprecated; use CP_SSH_USER_NAME instead."
+    CP_SSH_USER_NAME="$CP_USER_ID"
+    cp_ssh_user_name_explicit=true
+fi
 PREFER_PATH=${PREFER_PATH:-}
 SSH_PASSWORD=${SSH_PASSWORD:-}
 CP_SSH_PASSWORD=${CP_SSH_PASSWORD:-}
-CP_USER_ID=${CP_USER_ID:-}
 EFFECTIVE_USER=root
 EFFECTIVE_GROUP=root
 EFFECTIVE_HOME=/root
+
+if [[ -z "$USER_UID" && -z "$USER_GID" && "$CP_SSH_USER_NAME" == "unison" && $cp_ssh_user_name_explicit == false ]]; then
+    CP_SSH_USER_NAME=""
+fi
 
 extra_args=()
 if [[ -n "$UNISON_EXTRA_ARGS" ]]; then
@@ -102,17 +119,32 @@ setup_effective_identity() {
         fi
 
         local user_entry
-        local user_name="unison"
+        local user_name=""
+        local requested_user_name
+        if [[ -n "$SSH_USER_NAME" ]]; then
+            requested_user_name="$SSH_USER_NAME"
+        else
+            requested_user_name="unison"
+        fi
         if user_entry="$(getent passwd "$USER_UID")"; then
             user_name="${user_entry%%:*}"
             log "Reusing existing user $user_name (UID $USER_UID)"
             usermod --gid "$group_name" "$user_name"
             usermod --home "$desired_home" "$user_name"
             usermod --shell /bin/bash "$user_name"
-        else
-            if getent passwd "$user_name" >/dev/null; then
-                user_name="unison-$USER_UID"
+            if [[ -n "$SSH_USER_NAME" && "$SSH_USER_NAME" != "$user_name" ]]; then
+                log "WARNING: Ignoring SSH_USER_NAME=$SSH_USER_NAME because UID $USER_UID already belongs to $user_name"
             fi
+        else
+            if [[ -z "$requested_user_name" ]]; then
+                log "ERROR: SSH_USER_NAME must be set when providing USER_UID/USER_GID and no existing user is found."
+                exit 1
+            fi
+            if getent passwd "$requested_user_name" >/dev/null; then
+                log "ERROR: Requested SSH user $requested_user_name already exists with a different UID."
+                exit 1
+            fi
+            user_name="$requested_user_name"
             log "Creating user $user_name (UID $USER_UID, GID $USER_GID)"
             useradd --uid "$USER_UID" --gid "$group_name" --home-dir "$desired_home" --shell /bin/bash --no-create-home "$user_name"
         fi
@@ -125,6 +157,8 @@ setup_effective_identity() {
     elif [[ -n "$UNISON_ARCHIVE_PATH" ]]; then
         ensure_path "$UNISON_ARCHIVE_PATH"
         EFFECTIVE_HOME="$UNISON_ARCHIVE_PATH"
+    elif [[ -n "$SSH_USER_NAME" && "$SSH_USER_NAME" != "unison" ]]; then
+        log "WARNING: Ignoring SSH_USER_NAME=$SSH_USER_NAME because container is running as root."
     fi
 
     ensure_path "$EFFECTIVE_HOME/.unison"
@@ -207,8 +241,8 @@ case "${ROLE,,}" in
         require_var "COUNTERPARTY_IP" "$COUNTERPARTY_IP"
         require_var "CP_SSH_PASSWORD" "$CP_SSH_PASSWORD"
         remote_user="$EFFECTIVE_USER"
-        if [[ -n "$CP_USER_ID" ]]; then
-            remote_user="$CP_USER_ID"
+        if [[ -n "$CP_SSH_USER_NAME" ]]; then
+            remote_user="$CP_SSH_USER_NAME"
         fi
         repeat_args=()
         if ! mapfile -t repeat_args < <(build_repeat_args "$REPEAT_MODE" "$REPEAT_INTERVAL"); then

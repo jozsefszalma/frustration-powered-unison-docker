@@ -57,10 +57,11 @@ ENV ROLE=client \
     UNISON_ARCHIVE_PATH="" \
     USER_UID="" \
     USER_GID="" \
+    SSH_USER_NAME="unison" \
     PREFER_PATH="newer" \
     SSH_PASSWORD="" \
     CP_SSH_PASSWORD="" \
-    CP_USER_ID="" \
+    CP_SSH_USER_NAME="unison" \
     RECONNECT_DELAY=300
 
 

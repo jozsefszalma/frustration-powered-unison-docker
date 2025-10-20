@@ -64,9 +64,10 @@ The container is configured entirely through environment variables; you do not n
 | `REMOTE_PATH` | No | `/sync` | Path on the remote container that should be synchronised. Only used by the client. |
 | `COUNTERPARTY_IP` | Yes (client) | — | The **Tailscale IP** of the remote host. Required on the client side to reach the server. Optional on the server for reference. |
 | `UNISON_PORT` | No | `50000` | TCP port used for SSH between the two containers. Must match on both sides. |
-| `SSH_PASSWORD` | Yes (server) | — | Password for the root account inside the container. Required on the server so the client can authenticate. |
+| `SSH_PASSWORD` | Yes (server) | — | Password for the SSH account inside the container. |
 | `CP_SSH_PASSWORD` | Yes (client) | — | Password to use when connecting to the remote container. Must match the remote container's `SSH_PASSWORD`. |
-| `CP_USER_ID` | No | — | Username for the remote container when running as a client. Defaults to the local container user (root unless `USER_UID`/`USER_GID` are set). |
+| `SSH_USER_NAME` | No | `unison` | Login name to create or use when `USER_UID`/`USER_GID` are supplied. Ignored when the container runs as `root`. |
+| `CP_SSH_USER_NAME` | No | `unison` | Username for the remote container when running as a client. Defaults to the server's effective user (typically `root` unless overridden). |
 | `REPEAT_MODE` | No | `watch` | Synchronisation schedule: `watch` (inotify-based), any integer number of seconds (e.g. `300`), or `manual` to run once. |
 | `REPEAT_INTERVAL` | No | `300` | Fallback interval in seconds when `REPEAT_MODE` is not numeric. Ignored for `watch` and `manual`. |
 | `PREFER_PATH` | No | — | Optional argument passed to `unison -prefer` (e.g. `newer`, `/sync`). Leave unset to accept Unison’s default conflict handling. |
@@ -78,7 +79,7 @@ The container is configured entirely through environment variables; you do not n
 
 The above variables are populated in the dockerfile to ensure the host's docker user interface exposes them, but you need to populate the appropriate values and mount the folders before the first run.
 
-By default the container runs Unison and SSH as `root`. Provide `USER_UID` and `USER_GID` to create a matching user inside the container so new files inherit the correct ownership. When a user is created, SSH logins and the Unison process run as that account instead of `root`, and the `SSH_PASSWORD`/`CP_SSH_PASSWORD` variables apply to that user. Override the remote login by setting `CP_USER_ID` on the client when the server should use a different account (e.g. keep the server on `root` while the client writes files as an Unraid user).
+By default the container runs Unison and SSH as `root`, regardless of the `SSH_USER_NAME` default. Provide `USER_UID` and `USER_GID` together to create (or reuse) a matching user inside the container so new files inherit the correct ownership. When a user is created, set `SSH_USER_NAME` if you want to control the SSH login name; otherwise the entrypoint reuses any existing account for the provided UID. In this mode SSH logins and the Unison process run as the managed account, and the `SSH_PASSWORD`/`CP_SSH_PASSWORD` variables apply to that user. Override the remote login on the client by setting `CP_SSH_USER_NAME` when the server should use a different account (for example, keep the server on `root` while the client writes files as an Unraid user).
 
 ## Networking Guidance
 - Run the container in **host network** mode so inbound connections retain the remote Tailscale IP, which simplifies firewall rules.
@@ -214,6 +215,7 @@ The provided path becomes the Unison user’s home directory and the entrypoint 
    Error: Error in canonizing path: 
    /sync: Permission denied
    ```
+
 
 ## License
 - Distributed under the terms of the [MIT License](LICENSE.md).
