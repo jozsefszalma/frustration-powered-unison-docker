@@ -182,9 +182,15 @@ case "${ROLE,,}" in
             exit 1
         fi
 
-        log "Configuring root account password"
-        echo "root:$SSH_PASSWORD" | chpasswd
-        if [[ "$EFFECTIVE_USER" != "root" ]]; then
+        sshd_opts=(-D -e -p "$UNISON_PORT" -o "PasswordAuthentication yes" -o "UseDNS no")
+
+        if [[ "$EFFECTIVE_USER" == "root" ]]; then
+            log "Configuring root account password"
+            echo "root:$SSH_PASSWORD" | chpasswd
+            sshd_opts+=(-o "PermitRootLogin yes")
+        else
+            log "Skipping root password configuration because effective user is $EFFECTIVE_USER"
+            sshd_opts+=(-o "PermitRootLogin no")
             log "Configuring password for $EFFECTIVE_USER"
             echo "$EFFECTIVE_USER:$SSH_PASSWORD" | chpasswd
         fi
@@ -193,7 +199,6 @@ case "${ROLE,,}" in
         ssh-keygen -A
 
         sshd_bin="$(command -v sshd)"
-        sshd_opts=(-D -e -p "$UNISON_PORT" -o "PasswordAuthentication yes" -o "UseDNS no" -o "PermitRootLogin yes")
 
         log "Starting OpenSSH server on port $UNISON_PORT for user $EFFECTIVE_USER"
         exec "$sshd_bin" "${sshd_opts[@]}"
