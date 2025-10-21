@@ -220,5 +220,5 @@ The provided path becomes the Unison user’s home directory and the entrypoint 
 
 
 ## License
-- Distributed under the terms of the [MIT License](LICENSE.md).
+- Distributed under the terms of the [MIT License](LICENSE).
 - I built this for myself thus no support will be provided, you are on your own.
