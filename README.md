@@ -79,6 +79,8 @@ The container is configured entirely through environment variables; you do not n
 
 The above variables are populated in the dockerfile to ensure the host's docker user interface exposes them, but you need to populate the appropriate values and mount the folders before the first run.
 
+The client entrypoint includes `-perms 0` and `-dontchmod` in the Unison command so synchronisation ignores permission bits by default. 
+
 By default the container runs Unison and SSH as `root`, regardless of the `SSH_USER_NAME` default. Provide `USER_UID` and `USER_GID` together to create (or reuse) a matching user inside the container so new files inherit the correct ownership. When a user is created, set `SSH_USER_NAME` if you want to control the SSH login name; otherwise the entrypoint reuses any existing account for the provided UID. In this mode SSH logins and the Unison process run as the managed account, and the `SSH_PASSWORD`/`CP_SSH_PASSWORD` variables apply to that user. Override the remote login on the client by setting `CP_SSH_USER_NAME` when the server should use a different account (for example, keep the server on `root` while the client writes files as an Unraid user).
 
 ## Networking Guidance

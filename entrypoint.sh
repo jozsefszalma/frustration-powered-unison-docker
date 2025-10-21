@@ -266,6 +266,8 @@ case "${ROLE,,}" in
             "$LOCAL_PATH"
             "$remote_uri"
             -auto -batch -confirmbigdel=false
+            -perms 0
+            -dontchmod
             -sshcmd /usr/local/bin/ssh-with-pass.sh
             -sshargs "$ssh_args"
         )
