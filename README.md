@@ -213,7 +213,7 @@ The provided path becomes the Unison user’s home directory and the entrypoint 
 - When `REPEAT_MODE=watch`, Unison relies on `unison-fsmonitor`/inotify watches. Very large directory trees may consume noticeable CPU and memory and can hit kernel watcher limits.
 - For sake of simplicity I'm using host network, thus the firewall need to be set up on the host and you should use strong SSH passwords.
 - Environment variables (including passwords) can often be viewed via `docker inspect` or your NAS UI. Rotate credentials periodically and avoid reusing passwords used elsewhere.
-- If the permissions on the folder being synced on Unraid are broken, e.g. the UID assigned to the container doesn't have permissions to read/write files this will result in an error:
+- If the permissions on the folder being synced on Unraid are broken and/or the UID assigned to the container doesn't have permissions to read/write files this will result in an error:
    ```bash
    Error: Error in canonizing path: 
    /sync: Permission denied
