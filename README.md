@@ -72,8 +72,8 @@ The container is configured entirely through environment variables; you do not n
 | `REPEAT_INTERVAL` | No | `300` | Fallback interval in seconds when `REPEAT_MODE` is not numeric. Ignored for `watch` and `manual`. |
 | `PREFER_PATH` | No | — | Optional argument passed to `unison -prefer` (e.g. `newer`, `/sync`). Leave unset to accept Unison’s default conflict handling. |
 | `UNISON_EXTRA_ARGS` | No | — | Additional flags appended to the Unison command on both server and client. Quoted values (e.g. `-ignore "Name *.tmp"`) are now parsed correctly, but the string is evaluated by the entrypoint and should be treated as trusted input. |
-| `USER_UID` | No | — | When set together with `USER_GID`, the entrypoint creates (or reuses) a user account with this UID and runs Unison under that identity. |
-| `USER_GID` | No | — | Group ID paired with `USER_UID`. The entrypoint reuses an existing group with this GID or creates one if necessary. |
+| `USER_UID` | No | — | When set together with `USER_GID`, the entrypoint creates (or reuses) a user account with this UID and runs Unison under that identity. For Unraid I recommend setting this to 99 (nobody) to avoid permission issues. In case of Synology you need to figure out your own UID by e.g. via SSH with the id -u <username> command. |
+| `USER_GID` | No | — | Group ID paired with `USER_UID`. The entrypoint reuses an existing group with this GID or creates one if necessary. For both Unraid and Synology I recommend setting this to 100 (users). |
 | `UNISON_ARCHIVE_PATH` | No | — | Absolute path used as the Unison user’s home directory (e.g. `/config/unison`). Works even when running as `root`, and when combined with `USER_UID`/`USER_GID` the managed account’s home is set here so archives live outside the container. |
 | `RECONNECT_DELAY` | No | `300` | Seconds to wait before retrying the Unison connection after an error. Applies to the client role and retries indefinitely. |
 
