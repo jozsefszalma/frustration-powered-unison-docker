@@ -206,6 +206,7 @@ The provided path becomes the Unison user’s home directory and the entrypoint 
 | Synchronisation loops endlessly | Conflicting changes | Review the Unison logs, adjust `PREFER_PATH`, or add ignore rules via `UNISON_EXTRA_ARGS`. |
 | Firewall blocks all connections | Host firewall missing an allow rule for the remote Tailscale IP | Update the host firewall rule to permit the remote Tailscale IP on `UNISON_PORT`. |
 | Synology startup fails with `/usr/bin/env: 'bash\r'` | Windows Git checkout converted scripts to CRLF endings | Update to the latest commit, then run `git checkout -- entrypoint.sh` (or reclone) so Git reapplies the LF endings. |
+| You are unable to open the sync'ed files or folders | You didn't set the UID and GID properly (see above the Configuration guidance how). | Fix the file permissions e.g. via Unraid plugin 'Docker Safe New Perms'. |
 
 ## Known Issues
 - This method has more single-core overhead than e.g. Synology Drive ShareSync and could become CPU-bottlenecked on underpowered NAS appliances.
