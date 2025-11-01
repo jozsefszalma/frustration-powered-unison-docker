@@ -49,7 +49,7 @@ cd frustration-powered-unison-docker
 docker buildx create --use --name unison-builder 
 docker buildx use unison-builder
 # Build and push to Docker Hub
-docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t <your dockerhub username>/tailscale-unison:latest --push . 
+docker buildx build --platform linux/amd64 -t <your dockerhub username>/tailscale-unison:latest --push --no-cache . 
 ```
 
 > **Note:** On Windows, run the commands inside a WSL2 shell or a PowerShell session with Docker Desktop installed.
@@ -75,6 +75,7 @@ The container is configured entirely through environment variables; you do not n
 | `USER_UID` | No | — | When set together with `USER_GID`, the entrypoint creates (or reuses) a user account with this UID and runs Unison under that identity. For Unraid I recommend setting this to 99 (nobody) to avoid permission issues. In case of Synology you need to figure out your own UID by e.g. via SSH with the id -u <username> command. |
 | `USER_GID` | No | — | Group ID paired with `USER_UID`. The entrypoint reuses an existing group with this GID or creates one if necessary. For both Unraid and Synology I recommend setting this to 100 (users). |
 | `UNISON_ARCHIVE_PATH` | No | — | Absolute path used as the Unison user’s home directory (e.g. `/config/unison`). Works even when running as `root`, and when combined with `USER_UID`/`USER_GID` the managed account’s home is set here so archives live outside the container. |
+| `UMASK` | No | Current shell umask | File mode creation mask applied before additional directories are created or Unison is launched. Set values such as `002`, `022`, or `000` to control default permissions. |
 | `RECONNECT_DELAY` | No | `300` | Seconds to wait before retrying the Unison connection after an error. Applies to the client role and retries indefinitely. |
 
 The above variables are populated in the dockerfile to ensure the host's docker user interface exposes them, but you need to populate the appropriate values and mount the folders before the first run.
@@ -144,6 +145,7 @@ Persist the rules using your distribution’s tooling (e.g. `iptables-save` on U
    - `UNISON_PORT=50000`
    - `CP_SSH_PASSWORD=<value of SSH_PASSWORD on NAS1>`
    - Optional scheduling variables such as `REPEAT_MODE=300` to sync every five minutes instead of watching.
+   - Optional: `USER_UID=99`, `USER_GID=100`, and `UMASK=000` if you want the container to match Unraid’s default `nobody`/`users` account while leaving group write access intact.   
 6. Apply/start the container. Monitor the logs for successful SSH connections and Unison activity.
 
 > These examples illustrate Synology and Unraid deployments, but any pair of hosts that meet the prerequisites can act as NAS1 and NAS2.
@@ -206,7 +208,7 @@ The provided path becomes the Unison user’s home directory and the entrypoint 
 | Synchronisation loops endlessly | Conflicting changes | Review the Unison logs, adjust `PREFER_PATH`, or add ignore rules via `UNISON_EXTRA_ARGS`. |
 | Firewall blocks all connections | Host firewall missing an allow rule for the remote Tailscale IP | Update the host firewall rule to permit the remote Tailscale IP on `UNISON_PORT`. |
 | Synology startup fails with `/usr/bin/env: 'bash\r'` | Windows Git checkout converted scripts to CRLF endings | Update to the latest commit, then run `git checkout -- entrypoint.sh` (or reclone) so Git reapplies the LF endings. |
-| You are unable to open the sync'ed files or folders | You didn't set the UID and GID properly (see above the Configuration guidance how). | Fix the file permissions e.g. via Unraid plugin 'Docker Safe New Perms'. |
+| You are unable to open or delete the sync'ed files or folders | You didn't set the UID, GID or UMASK properly (see above the Configuration guidance how). | Fix the file permissions e.g. via Unraid plugin 'Docker Safe New Perms'. |
 
 ## Known Issues
 - This method has more single-core overhead than e.g. Synology Drive ShareSync and could become CPU-bottlenecked on underpowered NAS appliances.

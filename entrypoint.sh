@@ -10,6 +10,7 @@ REPEAT_MODE=${REPEAT_MODE:-watch}
 REPEAT_INTERVAL=${REPEAT_INTERVAL:-300}
 UNISON_EXTRA_ARGS=${UNISON_EXTRA_ARGS:-}
 UNISON_ARCHIVE_PATH=${UNISON_ARCHIVE_PATH:-}
+UMASK=${UMASK:-$(umask)}
 cp_ssh_user_name_explicit=false
 if [[ -n ${CP_SSH_USER_NAME+x} ]]; then
     cp_ssh_user_name_explicit=true
@@ -177,9 +178,11 @@ setup_effective_identity() {
 
 run_as_effective_user() {
     if [[ "$EFFECTIVE_USER" == "root" ]]; then
+        umask "$UMASK"
         HOME="$EFFECTIVE_HOME" "$@"
     else
-        runuser -u "$EFFECTIVE_USER" -- env HOME="$EFFECTIVE_HOME" "$@"
+        runuser -u "$EFFECTIVE_USER" -- env UMASK="$UMASK" HOME="$EFFECTIVE_HOME" \
+            /bin/sh -c 'umask "$UMASK"; exec "$@"' sh "$@"
     fi
 }
 
@@ -207,6 +210,8 @@ build_repeat_args() {
 
 ensure_path "$LOCAL_PATH"
 setup_effective_identity
+
+umask "$UMASK"
 
 case "${ROLE,,}" in
     server)
